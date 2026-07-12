@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MinuteMix | Five Daily Challenges, 15 Seconds Each</title>
+    <meta name="description" content="Play five quick daily challenges with 15 seconds for each round. Build a streak, beat your best score, and share your MinuteMix result.">
+    <meta name="theme-color" content="#111827">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="preload" href="assets/minutemix-key-art.webp" as="image" type="image/webp">
+    <link rel="stylesheet" href="styles.css">
+    <script src="game.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#game-app">Skip to game</a>
+
+    <header class="app-header">
+      <div class="header-inner">
+        <a class="brand" href="index.html" aria-label="MinuteMix home">
+          <span class="brand-mark" aria-hidden="true"><span>15</span></span>
+          <span class="brand-copy"><strong>MinuteMix</strong><small>15 sec each</small></span>
+        </a>
+
+        <div class="header-tools">
+          <div class="today-label"><span>Today</span><strong id="header-date">Daily mix</strong></div>
+          <label class="sound-control" title="Sound effects">
+            <span class="sound-label">Sound</span>
+            <input id="sound-toggle" type="checkbox" aria-label="Sound effects" checked>
+            <span class="switch-track" aria-hidden="true"><span></span></span>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <main id="game-app" class="app-main">
+      <noscript><p class="noscript-note">MinuteMix needs JavaScript to run the daily challenge.</p></noscript>
+
+      <section class="view lobby-view" id="lobby-view" aria-labelledby="lobby-title">
+        <div class="lobby-hero">
+          <img src="assets/minutemix-key-art.webp" alt="Colour tiles, memory cards, puzzle pieces, a globe, and a stopwatch arranged for a quick daily challenge" width="1600" height="916">
+          <div class="lobby-wash" aria-hidden="true"></div>
+          <div class="lobby-copy">
+            <p class="eyebrow"><span></span> Today&apos;s tiny brain boost</p>
+            <h1 id="lobby-title">MinuteMix</h1>
+            <p class="lobby-lead">Five tiny challenges. Fifteen seconds each.</p>
+            <p class="lobby-description">Colour, memory, patterns, world knowledge, and words. Fast enough for a break, fresh again tomorrow.</p>
+            <div class="lobby-actions">
+              <button class="button button-primary" id="start-button" type="button">Play today&apos;s mix <span aria-hidden="true">&#9654;</span></button>
+              <p id="played-note" class="played-note" hidden></p>
+            </div>
+          </div>
+
+          <div class="lobby-stats" aria-label="Your MinuteMix progress">
+            <div><span>Daily streak</span><strong id="lobby-streak">0 days</strong></div>
+            <div><span>Best score</span><strong id="lobby-best">0</strong></div>
+            <div><span>Fresh mix in</span><strong id="reset-countdown">--:--</strong></div>
+          </div>
+        </div>
+
+        <ol class="round-preview" aria-label="Today&apos;s five rounds">
+          <li data-accent="coral"><span>01</span><div><strong>Colour Clash</strong><small>Read the ink</small></div></li>
+          <li data-accent="blue"><span>02</span><div><strong>Memory Flash</strong><small>Catch the order</small></div></li>
+          <li data-accent="yellow"><span>03</span><div><strong>Quick Count</strong><small>Scan the pattern</small></div></li>
+          <li data-accent="mint"><span>04</span><div><strong>World Snap</strong><small>Know it quickly</small></div></li>
+          <li data-accent="plum"><span>05</span><div><strong>Word Twist</strong><small>Unscramble it</small></div></li>
+        </ol>
+      </section>
+
+      <section class="view game-view" id="play-view" aria-labelledby="round-title" hidden>
+        <div class="game-toolbar">
+          <div>
+            <p class="toolbar-label">Today&apos;s mix</p>
+            <div class="progress-dots" id="progress-dots" aria-label="Round progress"></div>
+          </div>
+          <div class="timer-group">
+            <div class="score-chip"><span>Score</span><strong id="live-score">0</strong></div>
+            <div class="timer-ring" id="timer-ring" aria-label="75 seconds remaining">
+              <div><strong id="timer-value">75</strong><span>sec</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-layout">
+          <aside class="round-rail" aria-label="Challenge rounds">
+            <p>Five rounds</p>
+            <ol id="round-rail-list"></ol>
+          </aside>
+
+          <section class="challenge-main" id="challenge-main">
+            <p class="round-kicker" id="round-kicker">Round 1 of 5</p>
+            <h2 id="round-title">Get ready.</h2>
+            <p class="round-instruction" id="round-instruction">Your first challenge is loading.</p>
+            <div class="stimulus" id="stimulus" aria-live="polite"></div>
+            <div class="answer-grid" id="answer-grid" role="group" aria-label="Answer choices"></div>
+          </section>
+
+          <aside class="round-status" aria-label="Current score">
+            <div class="status-stat"><span>Correct</span><strong><span id="correct-count">0</span>/5</strong></div>
+            <div class="round-clock"><span>Round time</span><strong id="round-time">15.0</strong></div>
+            <p class="feedback" id="feedback" role="status" aria-live="assertive">Stay sharp.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view result-view" id="result-view" aria-labelledby="result-title" hidden>
+        <div class="result-layout">
+          <div class="result-score-block">
+            <p class="eyebrow"><span></span> Mix complete</p>
+            <div class="result-score"><strong id="result-score">0</strong><span>/ 1000</span></div>
+            <div class="result-marks" id="result-marks" aria-label="Round results"></div>
+          </div>
+
+          <div class="result-copy">
+            <p class="result-date" id="result-date">Today&apos;s MinuteMix</p>
+            <h2 id="result-title">Nicely mixed.</h2>
+            <p id="result-message">That was one lively mix.</p>
+            <dl class="result-stats">
+              <div><dt>Correct</dt><dd id="result-correct">0/5</dd></div>
+              <div><dt>Daily streak</dt><dd id="result-streak">0 days</dd></div>
+              <div><dt>Best score</dt><dd id="result-best">0</dd></div>
+            </dl>
+            <div class="result-actions">
+              <button class="button button-primary" id="share-button" type="button">Share result <span aria-hidden="true">&#8599;</span></button>
+              <button class="button button-dark" id="replay-button" type="button">Play again <span aria-hidden="true">&#8635;</span></button>
+            </div>
+            <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div><strong>MinuteMix</strong><span>Five fresh challenges every day.</span></div>
+      <p>Your scores and streak stay on this device.</p>
+    </footer>
+  </body>
+</html>
