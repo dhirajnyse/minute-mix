@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <title>MinuteMix Social Card</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        background: #f4f6f3;
+        color: #111827;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .card {
+        position: relative;
+        display: grid;
+        grid-template-columns: 48% 52%;
+        width: 1200px;
+        height: 630px;
+        border-top: 12px solid #ff565b;
+        overflow: hidden;
+      }
+      .art {
+        position: relative;
+        overflow: hidden;
+        background: #dce5df;
+      }
+      .art img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 40% center;
+      }
+      .art::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 64%, #f4f6f3 100%);
+      }
+      .copy {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 68px 62px 98px 58px;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 0 0 22px;
+        color: #175bc7;
+        font-size: 17px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .eyebrow span { width: 34px; height: 7px; background: #ff565b; }
+      h1 {
+        margin: 0;
+        font-size: 78px;
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+      .lead {
+        max-width: 510px;
+        margin: 22px 0 14px;
+        color: #175bc7;
+        font-size: 31px;
+        line-height: 1.12;
+        font-weight: 800;
+      }
+      .description {
+        max-width: 500px;
+        margin: 0;
+        color: #465166;
+        font-size: 21px;
+        line-height: 1.42;
+      }
+      .brand-mark {
+        position: absolute;
+        right: 58px;
+        top: 46px;
+        display: grid;
+        place-items: center;
+        width: 74px;
+        height: 74px;
+        border: 8px solid #111827;
+        border-radius: 50%;
+        background: #ff565b;
+        color: #fff;
+        font-size: 25px;
+        font-weight: 900;
+      }
+      .rounds {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        height: 82px;
+        background: #111827;
+        color: #fff;
+      }
+      .rounds div {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0 24px;
+        border-right: 1px solid rgba(255,255,255,.16);
+        font-size: 16px;
+        font-weight: 800;
+      }
+      .rounds span { font-size: 14px; }
+      .rounds div:nth-child(1) span { color: #ff565b; }
+      .rounds div:nth-child(2) span { color: #2d72d2; }
+      .rounds div:nth-child(3) span { color: #ffc849; }
+      .rounds div:nth-child(4) span { color: #7acbb0; }
+      .rounds div:nth-child(5) span { color: #a56aa1; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <section class="art"><img src="assets/minutemix-key-art.webp" alt=""></section>
+      <section class="copy">
+        <div class="brand-mark">15</div>
+        <p class="eyebrow"><span></span> Today&apos;s tiny brain boost</p>
+        <h1>MinuteMix</h1>
+        <p class="lead">Five tiny challenges.<br>Fifteen seconds each.</p>
+        <p class="description">Play daily, practice endlessly, or challenge a friend to the exact same mix.</p>
+      </section>
+      <div class="rounds">
+        <div><span>01</span> Colour</div>
+        <div><span>02</span> Memory</div>
+        <div><span>03</span> Patterns</div>
+        <div><span>04</span> World</div>
+        <div><span>05</span> Words</div>
+      </div>
+    </main>
+  </body>
+</html>

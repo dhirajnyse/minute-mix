@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <title>MinuteMix App Icon</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 512px; height: 512px; overflow: hidden; }
+      body {
+        display: grid;
+        place-items: center;
+        background: #111827;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .mark {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 330px;
+        height: 330px;
+        border: 30px solid #f4f6f3;
+        border-radius: 50%;
+        background: #ff565b;
+        color: #fff;
+        box-shadow: 0 20px 0 rgba(0, 0, 0, .26);
+        font-size: 136px;
+        font-weight: 900;
+      }
+      .mark::after {
+        content: "";
+        position: absolute;
+        right: 34px;
+        bottom: 34px;
+        width: 44px;
+        height: 14px;
+        background: #111827;
+      }
+    </style>
+  </head>
+  <body><main class="mark">15</main></body>
+</html>

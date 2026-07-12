@@ -1,0 +1,26 @@
+{
+  "name": "MinuteMix",
+  "short_name": "MinuteMix",
+  "description": "Five tiny challenges, fifteen seconds each, with practice and friend duels.",
+  "id": "/minute-mix/",
+  "start_url": "/minute-mix/",
+  "scope": "/minute-mix/",
+  "display": "standalone",
+  "background_color": "#f4f6f3",
+  "theme_color": "#111827",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "assets/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/minutemix-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

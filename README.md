@@ -16,6 +16,7 @@ A mobile-first daily web game with five short challenges, 15 seconds for each ro
 - Keyboard and touch controls
 - Native share or clipboard fallback
 - Responsive desktop and mobile layouts
+- Branded social previews, installable app metadata, and search-engine discovery files
 
 ## Run locally
 
