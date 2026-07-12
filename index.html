@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MinuteMix | Daily Challenges and Unlimited Practice</title>
-    <meta name="description" content="Play five quick daily challenges or keep going in unlimited Practice Mode. Build a streak, beat your best scores, and share your MinuteMix result.">
+    <title>MinuteMix | Daily Challenges, Practice, and Friend Duels</title>
+    <meta name="description" content="Play five quick daily challenges, keep going in Practice Mode, or challenge a friend to the exact same MinuteMix rounds.">
     <meta name="theme-color" content="#111827">
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="preload" href="assets/minutemix-key-art.webp" as="image" type="image/webp">
-    <link rel="stylesheet" href="styles.css?v=3">
-    <script src="game.js?v=4" defer></script>
+    <link rel="stylesheet" href="styles.css?v=5">
+    <script src="game.js?v=5" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#game-app">Skip to game</a>
@@ -67,6 +67,34 @@
         </ol>
       </section>
 
+      <section class="view duel-invite-view" id="duel-invite-view" aria-labelledby="duel-invite-title" hidden>
+        <div class="duel-invite-layout">
+          <div class="duel-target-panel">
+            <p class="eyebrow"><span></span> Friend challenge</p>
+            <p class="duel-target-label">Score to beat</p>
+            <div class="duel-target-score"><strong id="duel-target-score">0</strong><span>/ 1000</span></div>
+            <div class="duel-five-marks" aria-label="Five identical challenge rounds">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="duel-invite-copy">
+            <p class="result-date">MinuteMix Duel</p>
+            <h1 id="duel-invite-title">Think you can beat it?</h1>
+            <p>Your friend has set the target. You will play the exact same five rounds in the same order.</p>
+            <dl class="duel-rules">
+              <div><dt>Rounds</dt><dd>5</dd></div>
+              <div><dt>Time</dt><dd>15 sec each</dd></div>
+              <div><dt>Entry</dt><dd>No sign-in</dd></div>
+            </dl>
+            <div class="duel-invite-actions">
+              <button class="button button-primary" id="start-duel-button" type="button">Start duel <span aria-hidden="true">&#9654;</span></button>
+              <button class="button button-secondary" id="duel-home-button" type="button">Daily home <span aria-hidden="true">&#8592;</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="view game-view" id="play-view" aria-labelledby="round-title" hidden>
         <div class="game-toolbar">
           <div>
@@ -74,7 +102,7 @@
             <div class="progress-dots" id="progress-dots" aria-label="Round progress"></div>
           </div>
           <div class="timer-group">
-            <div class="score-chip"><span>Score</span><strong id="live-score">0</strong></div>
+            <div class="score-chip"><span id="score-label">Score</span><strong id="live-score">0</strong></div>
             <div class="timer-ring" id="timer-ring" aria-label="75 seconds remaining">
               <div><strong id="timer-value">75</strong><span>sec</span></div>
             </div>
@@ -121,7 +149,7 @@
               <div><dt id="result-best-label">Best score</dt><dd id="result-best">0</dd></div>
             </dl>
             <div class="result-actions">
-              <button class="button button-primary" id="share-button" type="button">Share result <span aria-hidden="true">&#8599;</span></button>
+              <button class="button button-primary" id="share-button" type="button">Challenge a friend <span aria-hidden="true">&#8599;</span></button>
               <button class="button button-dark" id="replay-button" type="button">Fresh mix <span aria-hidden="true">&#8635;</span></button>
               <button class="button button-secondary" id="mode-switch-button" type="button">Replay today&apos;s mix <span aria-hidden="true">&#8635;</span></button>
             </div>
@@ -132,7 +160,7 @@
     </main>
 
     <footer class="app-footer">
-      <div><strong>MinuteMix</strong><span>Fresh daily. Unlimited practice.</span></div>
+      <div><strong>MinuteMix</strong><span>Fresh daily. Unlimited practice. Friendly duels.</span></div>
       <p>Your scores and streak stay on this device.</p>
     </footer>
   </body>

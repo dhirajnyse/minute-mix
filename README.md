@@ -7,6 +7,8 @@ A mobile-first daily web game with five short challenges, 15 seconds for each ro
 - Five deterministic daily rounds: colour, memory, counting, trivia, and word play
 - Unlimited Practice Mode with fresh five-round combinations and no format overlap between consecutive runs
 - Six additional practice formats: number and letter sequences, odd-one-out logic, quick calculations, compass turns, and reverse words
+- Friend Duel links that reproduce the exact same five questions, answers, and option order
+- Target-score invitations, win/tie/gap results, retries, and challenge-back sharing without accounts or a backend
 - Speed-weighted scoring out of 1000
 - Separate local daily streak, daily best, and practice best tracking
 - Sound toggle with generated browser tones

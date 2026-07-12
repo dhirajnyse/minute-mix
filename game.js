@@ -15,10 +15,14 @@ const ACCENTS = {
 const ROUND_LABELS = ["Colour Clash", "Memory Flash", "Quick Count", "World Snap", "Word Twist"];
 
 const lobbyView = document.querySelector("#lobby-view");
+const duelInviteView = document.querySelector("#duel-invite-view");
 const playView = document.querySelector("#play-view");
 const resultView = document.querySelector("#result-view");
 const startButton = document.querySelector("#start-button");
 const practiceButton = document.querySelector("#practice-button");
+const startDuelButton = document.querySelector("#start-duel-button");
+const duelHomeButton = document.querySelector("#duel-home-button");
+const duelTargetScore = document.querySelector("#duel-target-score");
 const replayButton = document.querySelector("#replay-button");
 const modeSwitchButton = document.querySelector("#mode-switch-button");
 const shareButton = document.querySelector("#share-button");
@@ -32,6 +36,7 @@ const progressDots = document.querySelector("#progress-dots");
 const roundRailList = document.querySelector("#round-rail-list");
 const toolbarLabel = document.querySelector("#toolbar-label");
 const roundRailLabel = document.querySelector("#round-rail-label");
+const scoreLabel = document.querySelector("#score-label");
 const liveScore = document.querySelector("#live-score");
 const timerRing = document.querySelector("#timer-ring");
 const timerValue = document.querySelector("#timer-value");
@@ -60,6 +65,7 @@ const today = new Date();
 const todayKey = dateKey(today);
 const todayDisplay = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" }).format(today);
 const dailyRounds = buildDailyRounds(todayKey);
+const incomingDuel = readDuelChallenge();
 
 let soundEnabled = readSoundPreference();
 let audioContext = null;
@@ -69,13 +75,17 @@ let transitionTimeout = 0;
 let practiceRun = 0;
 let previousPracticeTypes = [];
 let recentPracticeSignatures = [];
+let activeDuel = incomingDuel;
 let gameMode = "daily";
 let rounds = dailyRounds;
 let gameState = freshGameState(gameMode);
 
-function freshGameState(mode = "daily") {
+function freshGameState(mode = "daily", options = {}) {
   return {
     mode,
+    sourceMode: options.sourceMode || mode,
+    seed: options.seed || "",
+    target: Number(options.target) || 0,
     isPlaying: false,
     locked: false,
     roundIndex: 0,
@@ -92,6 +102,42 @@ function dateKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function readDuelChallenge() {
+  const params = new URLSearchParams(window.location.search);
+  const sourceMode = params.get("duel");
+  const seed = params.get("seed") || "";
+  const targetText = params.get("target") || "";
+  const target = Number(targetText);
+  const validSource = sourceMode === "daily" || sourceMode === "practice";
+  const validSeed = seed.length > 0 && seed.length <= 120 && /^[a-zA-Z0-9:._-]+$/.test(seed);
+  const validTarget = /^\d{1,4}$/.test(targetText) && Number.isInteger(target) && target >= 0 && target <= 1000;
+  if (!validSource || !validSeed || !validTarget) return null;
+  if (sourceMode === "daily" && !/^\d{4}-\d{2}-\d{2}$/.test(seed)) return null;
+  return { sourceMode, seed, target };
+}
+
+function roundsForDuel(challenge) {
+  return challenge.sourceMode === "daily"
+    ? buildDailyRounds(challenge.seed)
+    : buildPracticeRounds(challenge.seed);
+}
+
+function renderDuelInvite(challenge) {
+  activeDuel = challenge;
+  duelTargetScore.textContent = String(challenge.target);
+  headerDate.textContent = "Friend duel";
+  document.title = `MinuteMix Duel | Beat ${challenge.target}`;
+  showView(duelInviteView);
+}
+
+function clearDuelUrl() {
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.search = "";
+  cleanUrl.hash = "";
+  window.history.replaceState({}, "", cleanUrl.toString());
+  document.title = "MinuteMix | Daily Challenges, Practice, and Friend Duels";
 }
 
 function hashString(value) {
@@ -258,24 +304,29 @@ function buildDailyRounds(key) {
 }
 
 function buildPracticeRounds(seed) {
+  const random = seededRandom(hashString(`MinuteMix:practice:${seed}`));
+  const pool = [
+    ...buildDailyRounds(`practice:${seed}`),
+    buildSequenceRound(random),
+    buildOddRound(random),
+    buildMathRound(random),
+    buildLetterRound(random),
+    buildDirectionRound(random),
+    buildReverseRound(random)
+  ];
+  return shuffled(pool, random).slice(0, ROUNDS_PER_MIX);
+}
+
+function createFreshPracticeMix() {
+  let seed = "";
   let selected = [];
 
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const random = seededRandom(hashString(`MinuteMix:practice:${seed}:${attempt}`));
-    const pool = [
-      ...buildDailyRounds(`practice:${seed}:${attempt}`),
-      buildSequenceRound(random),
-      buildOddRound(random),
-      buildMathRound(random),
-      buildLetterRound(random),
-      buildDirectionRound(random),
-      buildReverseRound(random)
-    ];
-    const unusedFormats = shuffled(pool.filter((round) => !previousPracticeTypes.includes(round.type)), random);
-    const fallbackFormats = shuffled(pool.filter((round) => previousPracticeTypes.includes(round.type)), random);
-    selected = [...unusedFormats, ...fallbackFormats].slice(0, ROUNDS_PER_MIX);
-    const signatures = selected.map(practiceSignature);
-    if (signatures.every((signature) => !recentPracticeSignatures.includes(signature))) break;
+  for (let attempt = 0; attempt < 500; attempt += 1) {
+    seed = `${Date.now()}:${practiceRun += 1}`;
+    selected = buildPracticeRounds(seed);
+    const typesAreFresh = selected.every((round) => !previousPracticeTypes.includes(round.type));
+    const puzzlesAreFresh = selected.map(practiceSignature).every((signature) => !recentPracticeSignatures.includes(signature));
+    if (typesAreFresh && puzzlesAreFresh) break;
   }
 
   previousPracticeTypes = selected.map((round) => round.type);
@@ -283,7 +334,7 @@ function buildPracticeRounds(seed) {
     ...recentPracticeSignatures,
     ...selected.map(practiceSignature)
   ].slice(-(ROUNDS_PER_MIX * 3));
-  return selected;
+  return { rounds: selected, seed };
 }
 
 function buildSequenceRound(random) {
@@ -584,25 +635,46 @@ function buildProgressUI() {
 }
 
 function showView(view) {
-  [lobbyView, playView, resultView].forEach((candidate) => {
+  [lobbyView, duelInviteView, playView, resultView].forEach((candidate) => {
     candidate.hidden = candidate !== view;
   });
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
-function startGame(mode = "daily") {
+function startGame(mode = "daily", challenge = activeDuel) {
   clearGameTimers();
   gameMode = mode;
-  rounds = mode === "practice"
-    ? buildPracticeRounds(`${Date.now()}:${practiceRun += 1}`)
-    : dailyRounds;
-  gameState = freshGameState(mode);
+  let seed = todayKey;
+  let sourceMode = "daily";
+  let target = 0;
+
+  if (mode === "practice") {
+    const freshMix = createFreshPracticeMix();
+    rounds = freshMix.rounds;
+    seed = freshMix.seed;
+    sourceMode = "practice";
+  } else if (mode === "duel") {
+    if (!challenge) {
+      showDailyLobby();
+      return;
+    }
+    activeDuel = challenge;
+    rounds = roundsForDuel(challenge);
+    seed = challenge.seed;
+    sourceMode = challenge.sourceMode;
+    target = challenge.target;
+  } else {
+    rounds = dailyRounds;
+  }
+
+  gameState = freshGameState(mode, { seed, sourceMode, target });
   gameState.isPlaying = true;
   liveScore.textContent = "0";
   correctCount.textContent = "0";
   shareStatus.textContent = "";
-  toolbarLabel.textContent = mode === "practice" ? "Practice mix" : "Today's mix";
-  roundRailLabel.textContent = mode === "practice" ? "Fresh practice" : "Five rounds";
+  toolbarLabel.textContent = mode === "duel" ? "Friend duel" : mode === "practice" ? "Practice mix" : "Today's mix";
+  roundRailLabel.textContent = mode === "duel" ? "Same five rounds" : mode === "practice" ? "Fresh practice" : "Five rounds";
+  scoreLabel.textContent = mode === "duel" ? `Score / ${target}` : "Score";
   buildProgressUI();
   showView(playView);
   renderRound();
@@ -930,6 +1002,8 @@ function finishGame(expired = false) {
   }
 
   const progress = readProgress();
+  const isPractice = gameState.mode === "practice";
+  const isDuel = gameState.mode === "duel";
   if (gameState.mode === "daily") {
     const previousResult = progress.daily[todayKey];
     if (progress.lastPlayed !== todayKey) {
@@ -939,37 +1013,76 @@ function finishGame(expired = false) {
     const bestToday = Math.max(previousResult ? previousResult.score : 0, gameState.score);
     progress.daily[todayKey] = { score: bestToday, correct: Math.max(previousResult ? previousResult.correct : 0, gameState.correct) };
     progress.best = Math.max(progress.best, gameState.score);
-  } else {
+  } else if (isPractice) {
     progress.practiceBest = Math.max(progress.practiceBest, gameState.score);
   }
   saveProgress(progress);
 
-  const isPractice = gameState.mode === "practice";
   resultView.dataset.mode = gameState.mode;
   resultScore.textContent = String(gameState.score);
-  resultEyebrow.textContent = isPractice ? "Practice complete" : "Mix complete";
-  resultDate.textContent = isPractice ? "Fresh practice | MinuteMix" : `${todayDisplay} | Today's MinuteMix`;
   resultCorrect.textContent = `${gameState.correct}/${ROUNDS_PER_MIX}`;
-  resultStreakLabel.textContent = isPractice ? "Mode" : "Daily streak";
-  resultStreak.textContent = isPractice ? "Practice" : `${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
-  resultBestLabel.textContent = isPractice ? "Practice best" : "Best score";
-  resultBest.textContent = String(isPractice ? progress.practiceBest : progress.best);
-  replayButton.innerHTML = isPractice
-    ? "Another fresh mix <span aria-hidden=\"true\">&#8635;</span>"
-    : "Fresh mix <span aria-hidden=\"true\">&#8635;</span>";
-  modeSwitchButton.innerHTML = isPractice
-    ? "Daily home <span aria-hidden=\"true\">&#8592;</span>"
-    : "Replay today&apos;s mix <span aria-hidden=\"true\">&#8635;</span>";
-  resultTitle.textContent = resultHeading(gameState.correct, gameState.mode);
-  resultMessage.textContent = expired
-    ? isPractice
-      ? "The final bell called time. A fresh practice mix is ready when you are."
-      : "The final bell called time. Your next mix arrives tomorrow."
-    : resultCopy(gameState.correct, gameState.mode);
+
+  if (isDuel) {
+    const outcome = duelOutcome(gameState.score, gameState.target);
+    resultEyebrow.textContent = "Duel complete";
+    resultDate.textContent = `Friend duel | Target ${gameState.target}`;
+    resultStreakLabel.textContent = "Target score";
+    resultStreak.textContent = String(gameState.target);
+    resultBestLabel.textContent = "Outcome";
+    resultBest.textContent = outcome.label;
+    resultTitle.textContent = outcome.title;
+    resultMessage.textContent = expired ? `Time called. ${outcome.copy}` : outcome.copy;
+    shareButton.innerHTML = "Challenge back <span aria-hidden=\"true\">&#8599;</span>";
+    replayButton.innerHTML = "Retry duel <span aria-hidden=\"true\">&#8635;</span>";
+    modeSwitchButton.innerHTML = "Daily home <span aria-hidden=\"true\">&#8592;</span>";
+  } else {
+    resultEyebrow.textContent = isPractice ? "Practice complete" : "Mix complete";
+    resultDate.textContent = isPractice ? "Fresh practice | MinuteMix" : `${todayDisplay} | Today's MinuteMix`;
+    resultStreakLabel.textContent = isPractice ? "Mode" : "Daily streak";
+    resultStreak.textContent = isPractice ? "Practice" : `${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
+    resultBestLabel.textContent = isPractice ? "Practice best" : "Best score";
+    resultBest.textContent = String(isPractice ? progress.practiceBest : progress.best);
+    resultTitle.textContent = resultHeading(gameState.correct, gameState.mode);
+    resultMessage.textContent = expired
+      ? isPractice
+        ? "The final bell called time. A fresh practice mix is ready when you are."
+        : "The final bell called time. Your next mix arrives tomorrow."
+      : resultCopy(gameState.correct, gameState.mode);
+    shareButton.innerHTML = "Challenge a friend <span aria-hidden=\"true\">&#8599;</span>";
+    replayButton.innerHTML = isPractice
+      ? "Another fresh mix <span aria-hidden=\"true\">&#8635;</span>"
+      : "Fresh mix <span aria-hidden=\"true\">&#8635;</span>";
+    modeSwitchButton.innerHTML = isPractice
+      ? "Daily home <span aria-hidden=\"true\">&#8592;</span>"
+      : "Replay today&apos;s mix <span aria-hidden=\"true\">&#8635;</span>";
+  }
   renderResultMarks();
   updateLobby();
   showView(resultView);
   playTone("finish");
+}
+
+function duelOutcome(score, target) {
+  const gap = Math.abs(score - target);
+  if (score > target) {
+    return {
+      label: `Won +${gap}`,
+      title: "You won the duel.",
+      copy: `You cleared the target by ${gap} points. Send the challenge back and raise the stakes.`
+    };
+  }
+  if (score === target) {
+    return {
+      label: "Tie",
+      title: "Dead heat.",
+      copy: "Exactly level. Challenge back and let the rematch settle it."
+    };
+  }
+  return {
+    label: `${gap} short`,
+    title: "So close.",
+    copy: `You finished ${gap} points behind the target. The same five are ready for another try.`
+  };
 }
 
 function resultHeading(correct, mode) {
@@ -1009,33 +1122,48 @@ function renderResultMarks() {
 }
 
 function shareResult() {
-  const progress = readProgress();
   const marks = gameState.results.map((result) => result.correct ? "\u{1f7e9}" : "\u2b1c").join("");
-  const isPractice = gameState.mode === "practice";
+  const challengeUrl = buildChallengeUrl();
+  if (!challengeUrl) {
+    shareStatus.textContent = "This challenge link could not be prepared.";
+    return;
+  }
   const text = [
-    isPractice ? "MinuteMix | Practice Mix" : `MinuteMix | ${todayDisplay}`,
+    gameState.mode === "duel" ? "MinuteMix Duel | Challenge back" : "MinuteMix Duel | Challenge a friend",
     marks,
-    isPractice
-      ? `${gameState.score}/1000 | ${gameState.correct}/5 | practice best ${progress.practiceBest}`
-      : `${gameState.score}/1000 | ${gameState.correct}/5 | ${progress.streak}-day streak`,
-    "Five tiny challenges. Fifteen seconds each."
+    `I scored ${gameState.score}/1000 with ${gameState.correct}/5 correct.`,
+    "Can you beat it on the exact same five challenges?"
   ].join("\n");
 
   if (typeof navigator.share === "function") {
-    navigator.share({ title: "My MinuteMix result", text, url: window.location.href })
-      .then(() => { shareStatus.textContent = "Result shared."; })
+    navigator.share({ title: "MinuteMix Duel", text, url: challengeUrl })
+      .then(() => { shareStatus.textContent = "Challenge shared."; })
       .catch((error) => {
-        if (!error || error.name !== "AbortError") copyResult(text);
+        if (!error || error.name !== "AbortError") copyResult(`${text}\n${challengeUrl}`);
       });
     return;
   }
-  copyResult(text);
+  copyResult(`${text}\n${challengeUrl}`);
+}
+
+function buildChallengeUrl() {
+  if (!gameState.seed) return "";
+  const sourceMode = gameState.mode === "daily"
+    ? "daily"
+    : gameState.sourceMode === "daily" ? "daily" : "practice";
+  const challengeUrl = new URL(window.location.href);
+  challengeUrl.search = "";
+  challengeUrl.hash = "";
+  challengeUrl.searchParams.set("duel", sourceMode);
+  challengeUrl.searchParams.set("seed", gameState.seed);
+  challengeUrl.searchParams.set("target", String(gameState.score));
+  return challengeUrl.toString();
 }
 
 function copyResult(text) {
   if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
     navigator.clipboard.writeText(text)
-      .then(() => { shareStatus.textContent = "Result copied to your clipboard."; })
+      .then(() => { shareStatus.textContent = "Challenge link copied to your clipboard."; })
       .catch(() => { shareStatus.textContent = "Sharing is unavailable in this browser."; });
   } else {
     shareStatus.textContent = "Sharing is unavailable in this browser.";
@@ -1085,6 +1213,8 @@ function clearGameTimers() {
 
 function showDailyLobby() {
   clearGameTimers();
+  clearDuelUrl();
+  activeDuel = null;
   gameMode = "daily";
   rounds = dailyRounds;
   gameState = freshGameState("daily");
@@ -1095,9 +1225,21 @@ function showDailyLobby() {
 
 startButton.addEventListener("click", () => startGame("daily"));
 practiceButton.addEventListener("click", () => startGame("practice"));
-replayButton.addEventListener("click", () => startGame("practice"));
+startDuelButton.addEventListener("click", () => startGame("duel", activeDuel));
+duelHomeButton.addEventListener("click", showDailyLobby);
+replayButton.addEventListener("click", () => {
+  if (gameMode === "duel") {
+    startGame("duel", {
+      sourceMode: gameState.sourceMode,
+      seed: gameState.seed,
+      target: gameState.target
+    });
+  } else {
+    startGame("practice");
+  }
+});
 modeSwitchButton.addEventListener("click", () => {
-  if (gameMode === "practice") showDailyLobby();
+  if (gameMode === "practice" || gameMode === "duel") showDailyLobby();
   else startGame("daily");
 });
 shareButton.addEventListener("click", shareResult);
@@ -1119,7 +1261,18 @@ document.addEventListener("keydown", (event) => {
 
   if (event.key === "Enter" && document.activeElement === document.body) {
     if (!lobbyView.hidden) startGame("daily");
-    else if (!resultView.hidden) startGame("practice");
+    else if (!duelInviteView.hidden) startGame("duel", activeDuel);
+    else if (!resultView.hidden) {
+      if (gameMode === "duel") {
+        startGame("duel", {
+          sourceMode: gameState.sourceMode,
+          seed: gameState.seed,
+          target: gameState.target
+        });
+      } else {
+        startGame("practice");
+      }
+    }
   }
 });
 
@@ -1129,3 +1282,4 @@ buildProgressUI();
 updateLobby();
 updateResetCountdown();
 window.setInterval(updateResetCountdown, 30000);
+if (incomingDuel) renderDuelInvite(incomingDuel);
