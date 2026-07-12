@@ -836,6 +836,75 @@ h3 {
   box-shadow: 4px 4px 0 var(--ink);
 }
 
+.sequence-stage.is-letters .sequence-tile {
+  box-shadow: 4px 4px 0 var(--plum);
+}
+
+.sequence-stage.is-letters .sequence-tile.is-missing {
+  background: var(--plum);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.direction-stage {
+  display: grid;
+  width: min(100% - 36px, 520px);
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+}
+
+.compass-face {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 7px 7px 0 var(--coral);
+}
+
+.compass-face > span:not(.compass-pointer) {
+  position: absolute;
+  color: var(--muted-ink);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.compass-north { top: 7px; left: 50%; transform: translateX(-50%); }
+.compass-east { top: 50%; right: 7px; transform: translateY(-50%); }
+.compass-south { bottom: 7px; left: 50%; transform: translateX(-50%); }
+.compass-west { top: 50%; left: 7px; transform: translateY(-50%); }
+
+.compass-pointer {
+  --compass-rotation: 0deg;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  color: var(--blue);
+  font-size: 46px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translate(-50%, -50%) rotate(var(--compass-rotation));
+}
+
+.direction-stage strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 22px;
+}
+
+.direction-stage p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 18px;
+  font-weight: 800;
+}
+
 .logic-stage {
   display: grid;
   width: min(100% - 36px, 520px);
@@ -905,6 +974,10 @@ h3 {
   margin: 0;
   color: var(--muted-ink);
   font-size: 13px;
+}
+
+.reverse-stage .letter-tile {
+  background: var(--mint);
 }
 
 .answer-grid {
@@ -1467,6 +1540,40 @@ h3 {
     width: 48px;
     height: 50px;
     font-size: 18px;
+  }
+
+  .direction-stage {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .compass-face {
+    width: 74px;
+    height: 74px;
+    box-shadow: 5px 5px 0 var(--coral);
+  }
+
+  .compass-pointer {
+    width: 34px;
+    height: 34px;
+    font-size: 32px;
+  }
+
+  .compass-face > span:not(.compass-pointer) {
+    font-size: 7px;
+  }
+
+  .compass-north { top: 4px; }
+  .compass-east { right: 4px; }
+  .compass-south { bottom: 4px; }
+  .compass-west { left: 4px; }
+
+  .direction-stage strong {
+    font-size: 18px;
+  }
+
+  .direction-stage p {
+    font-size: 15px;
   }
 
   .logic-stage {

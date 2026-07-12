@@ -67,6 +67,8 @@ let animationFrame = 0;
 let memoryTimeout = 0;
 let transitionTimeout = 0;
 let practiceRun = 0;
+let previousPracticeTypes = [];
+let recentPracticeSignatures = [];
 let gameMode = "daily";
 let rounds = dailyRounds;
 let gameState = freshGameState(gameMode);
@@ -256,14 +258,32 @@ function buildDailyRounds(key) {
 }
 
 function buildPracticeRounds(seed) {
-  const random = seededRandom(hashString(`MinuteMix:practice:${seed}`));
-  const classics = shuffled(buildDailyRounds(`practice:${seed}`), random).slice(0, 3);
-  const newFormats = shuffled([
-    buildSequenceRound(random),
-    buildOddRound(random),
-    buildMathRound(random)
-  ], random).slice(0, 2);
-  return shuffled([...classics, ...newFormats], random);
+  let selected = [];
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const random = seededRandom(hashString(`MinuteMix:practice:${seed}:${attempt}`));
+    const pool = [
+      ...buildDailyRounds(`practice:${seed}:${attempt}`),
+      buildSequenceRound(random),
+      buildOddRound(random),
+      buildMathRound(random),
+      buildLetterRound(random),
+      buildDirectionRound(random),
+      buildReverseRound(random)
+    ];
+    const unusedFormats = shuffled(pool.filter((round) => !previousPracticeTypes.includes(round.type)), random);
+    const fallbackFormats = shuffled(pool.filter((round) => previousPracticeTypes.includes(round.type)), random);
+    selected = [...unusedFormats, ...fallbackFormats].slice(0, ROUNDS_PER_MIX);
+    const signatures = selected.map(practiceSignature);
+    if (signatures.every((signature) => !recentPracticeSignatures.includes(signature))) break;
+  }
+
+  previousPracticeTypes = selected.map((round) => round.type);
+  recentPracticeSignatures = [
+    ...recentPracticeSignatures,
+    ...selected.map(practiceSignature)
+  ].slice(-(ROUNDS_PER_MIX * 3));
+  return selected;
 }
 
 function buildSequenceRound(random) {
@@ -356,6 +376,107 @@ function buildMathRound(random) {
   };
 }
 
+function buildLetterRound(random) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const step = 2 + Math.floor(random() * 3);
+  const maxStart = alphabet.length - 1 - step * 4;
+  const start = Math.floor(random() * (maxStart + 1));
+  const values = Array.from({ length: 4 }, (_, index) => alphabet[start + index * step]);
+  const answer = alphabet[start + 4 * step];
+  return {
+    type: "letters",
+    accent: ACCENTS.plum,
+    name: "Letter Leap",
+    title: "Which letter comes next?",
+    instruction: "Follow the alphabet jump and finish the sequence.",
+    sequence: [...values, "?"],
+    answer,
+    options: letterOptions(answer, random)
+  };
+}
+
+function buildDirectionRound(random) {
+  const directions = ["North", "East", "South", "West"];
+  const turns = [
+    { delta: 1, text: "Turn right once." },
+    { delta: -1, text: "Turn left once." },
+    { delta: 2, text: "Turn around." },
+    { delta: 2, text: "Turn right twice." },
+    { delta: -2, text: "Turn left twice." },
+    { delta: 3, text: "Turn right, then turn around." },
+    { delta: 1, text: "Turn left, then turn around." }
+  ];
+  const startIndex = Math.floor(random() * directions.length);
+  const turn = pick(turns, random);
+  const answerIndex = (startIndex + turn.delta + directions.length * 2) % directions.length;
+  return {
+    type: "direction",
+    accent: ACCENTS.coral,
+    name: "Compass Turn",
+    title: "Where are you facing?",
+    instruction: "Begin at the shown direction, then follow the turn.",
+    start: directions[startIndex],
+    startIndex,
+    turn: turn.text,
+    answer: directions[answerIndex],
+    options: shuffled(directions.map((value) => ({ label: value, value })), random)
+  };
+}
+
+function buildReverseRound(random) {
+  const bank = [
+    { word: "PLANET", distractors: ["PLANTS", "PLATES", "PLENTY"] },
+    { word: "BRIGHT", distractors: ["BRIDGE", "RIGHTS", "BIRTHS"] },
+    { word: "MARKET", distractors: ["MAKER", "MASTER", "MAGNET"] },
+    { word: "PUZZLE", distractors: ["BUNDLE", "MUSCLE", "PURPLE"] },
+    { word: "SILVER", distractors: ["RIVER", "LIVER", "SOLVER"] },
+    { word: "WINDOW", distractors: ["WONDER", "WINTER", "WIDOW"] },
+    { word: "ENERGY", distractors: ["ENJOY", "ENTRY", "ENEMY"] },
+    { word: "CAMERA", distractors: ["CAMPER", "CAREER", "CANDLE"] }
+  ];
+  const puzzle = pick(bank, random);
+  return {
+    type: "reverse",
+    accent: ACCENTS.mint,
+    name: "Reverse Relay",
+    title: "Read it in reverse.",
+    instruction: "Flip the letter order and choose the original word.",
+    reversed: puzzle.word.split("").reverse().join(""),
+    answer: puzzle.word,
+    options: shuffled([puzzle.word, ...puzzle.distractors].map((value) => ({ label: value, value })), random)
+  };
+}
+
+function letterOptions(answer, random) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const answerIndex = alphabet.indexOf(answer);
+  const values = new Set([answer]);
+  shuffled([-4, -3, -2, -1, 1, 2, 3, 4], random).forEach((offset) => {
+    const index = answerIndex + offset;
+    if (values.size < 4 && index >= 0 && index < alphabet.length) values.add(alphabet[index]);
+  });
+  return shuffled([...values].map((value) => ({ label: value, value })), random);
+}
+
+function practiceSignature(round) {
+  const sequence = (round.sequence || []).map((value) => value.value || value).join("");
+  const pattern = (round.pattern || []).map((value) => value ? "1" : "0").join("");
+  return [
+    round.type,
+    round.word || "",
+    round.ink || "",
+    round.scrambled || "",
+    round.reversed || "",
+    round.question || "",
+    round.expression || "",
+    round.start || "",
+    round.turn || "",
+    sequence,
+    pattern,
+    String(round.answer)
+  ].join("|");
+}
+
 function numberOptions(answer, random) {
   const values = new Set([answer]);
   const offsets = shuffled([-6, -4, -3, -2, -1, 1, 2, 3, 4, 6], random);
@@ -427,7 +548,7 @@ function updateLobby() {
   if (todayResult) {
     startButton.innerHTML = "Replay today&apos;s mix <span aria-hidden=\"true\">&#8635;</span>";
     playedNote.hidden = false;
-    playedNote.textContent = `Today's best is ${todayResult.score}. Replays are just for fun.`;
+    playedNote.textContent = `Today's best is ${todayResult.score}. Practice is always fresh.`;
   } else {
     startButton.innerHTML = "Play today&apos;s mix <span aria-hidden=\"true\">&#9654;</span>";
     playedNote.hidden = true;
@@ -572,15 +693,37 @@ function renderStimulus(round) {
     return;
   }
 
-  if (round.type === "sequence") {
+  if (round.type === "sequence" || round.type === "letters") {
     const stage = document.createElement("div");
-    stage.className = "sequence-stage";
+    stage.className = `sequence-stage${round.type === "letters" ? " is-letters" : ""}`;
     round.sequence.forEach((value) => {
       const tile = document.createElement("span");
       tile.className = `sequence-tile${value === "?" ? " is-missing" : ""}`;
       tile.textContent = String(value);
       stage.appendChild(tile);
     });
+    stimulus.appendChild(stage);
+    return;
+  }
+
+  if (round.type === "direction") {
+    const stage = document.createElement("div");
+    stage.className = "direction-stage";
+    const compass = document.createElement("div");
+    compass.className = "compass-face";
+    compass.innerHTML = '<span class="compass-north">N</span><span class="compass-east">E</span><span class="compass-south">S</span><span class="compass-west">W</span>';
+    const pointer = document.createElement("span");
+    pointer.className = "compass-pointer";
+    pointer.style.setProperty("--compass-rotation", `${round.startIndex * 90}deg`);
+    pointer.textContent = "\u2191";
+    compass.appendChild(pointer);
+    const copy = document.createElement("div");
+    const start = document.createElement("strong");
+    start.textContent = `Start ${round.start}`;
+    const turn = document.createElement("p");
+    turn.textContent = round.turn;
+    copy.append(start, turn);
+    stage.append(compass, copy);
     stimulus.appendChild(stage);
     return;
   }
@@ -602,6 +745,25 @@ function renderStimulus(round) {
     const stage = document.createElement("div");
     stage.className = "math-stage";
     stage.textContent = `${round.expression} = ?`;
+    stimulus.appendChild(stage);
+    return;
+  }
+
+  if (round.type === "reverse") {
+    const stage = document.createElement("div");
+    stage.className = "scramble-stage reverse-stage";
+    const tiles = document.createElement("div");
+    tiles.className = "letter-tiles";
+    round.reversed.split("").forEach((letter) => {
+      const tile = document.createElement("span");
+      tile.className = "letter-tile";
+      tile.textContent = letter;
+      tiles.appendChild(tile);
+    });
+    const hint = document.createElement("p");
+    hint.className = "scramble-hint";
+    hint.textContent = "Read from right to left.";
+    stage.append(tiles, hint);
     stimulus.appendChild(stage);
     return;
   }
@@ -793,11 +955,11 @@ function finishGame(expired = false) {
   resultBestLabel.textContent = isPractice ? "Practice best" : "Best score";
   resultBest.textContent = String(isPractice ? progress.practiceBest : progress.best);
   replayButton.innerHTML = isPractice
-    ? "New practice mix <span aria-hidden=\"true\">&#8635;</span>"
-    : "Play again <span aria-hidden=\"true\">&#8635;</span>";
+    ? "Another fresh mix <span aria-hidden=\"true\">&#8635;</span>"
+    : "Fresh mix <span aria-hidden=\"true\">&#8635;</span>";
   modeSwitchButton.innerHTML = isPractice
     ? "Daily home <span aria-hidden=\"true\">&#8592;</span>"
-    : "Practice mode <span aria-hidden=\"true\">&infin;</span>";
+    : "Replay today&apos;s mix <span aria-hidden=\"true\">&#8635;</span>";
   resultTitle.textContent = resultHeading(gameState.correct, gameState.mode);
   resultMessage.textContent = expired
     ? isPractice
@@ -832,8 +994,8 @@ function resultCopy(correct, mode) {
     return "A useful warm-up. Every new practice mix brings a different combination.";
   }
   if (correct === 5) return "Five clean answers. That mix barely stood a chance.";
-  if (correct >= 3) return "A lively result with room for one more clever day tomorrow.";
-  return "Some days are quick, some are curious. Your streak has officially started.";
+  if (correct >= 3) return "A lively daily result. A fresh practice mix is ready when you are.";
+  return "Some days are quick, some are curious. Try a fresh mix and keep moving.";
 }
 
 function renderResultMarks() {
@@ -933,10 +1095,10 @@ function showDailyLobby() {
 
 startButton.addEventListener("click", () => startGame("daily"));
 practiceButton.addEventListener("click", () => startGame("practice"));
-replayButton.addEventListener("click", () => startGame(gameMode));
+replayButton.addEventListener("click", () => startGame("practice"));
 modeSwitchButton.addEventListener("click", () => {
   if (gameMode === "practice") showDailyLobby();
-  else startGame("practice");
+  else startGame("daily");
 });
 shareButton.addEventListener("click", shareResult);
 soundToggle.addEventListener("change", () => {
@@ -957,7 +1119,7 @@ document.addEventListener("keydown", (event) => {
 
   if (event.key === "Enter" && document.activeElement === document.body) {
     if (!lobbyView.hidden) startGame("daily");
-    else if (!resultView.hidden) startGame(gameMode);
+    else if (!resultView.hidden) startGame("practice");
   }
 });
 
