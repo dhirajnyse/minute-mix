@@ -8,6 +8,7 @@ A mobile-first daily web game with five short challenges, 15 seconds for each ro
 - Unlimited Practice Mode with fresh five-round combinations and no format overlap between consecutive runs
 - Six additional practice formats: number and letter sequences, odd-one-out logic, quick calculations, compass turns, and reverse words
 - Friend Duel links that reproduce the exact same five questions, answers, and option order
+- A home-screen Duel Builder for setting a new target score before sharing
 - Target-score invitations, win/tie/gap results, retries, and challenge-back sharing without accounts or a backend
 - Speed-weighted scoring out of 1000
 - Separate local daily streak, daily best, and practice best tracking

@@ -20,6 +20,7 @@ const playView = document.querySelector("#play-view");
 const resultView = document.querySelector("#result-view");
 const startButton = document.querySelector("#start-button");
 const practiceButton = document.querySelector("#practice-button");
+const createDuelButton = document.querySelector("#create-duel-button");
 const startDuelButton = document.querySelector("#start-duel-button");
 const duelHomeButton = document.querySelector("#duel-home-button");
 const duelTargetScore = document.querySelector("#duel-target-score");
@@ -648,7 +649,7 @@ function startGame(mode = "daily", challenge = activeDuel) {
   let sourceMode = "daily";
   let target = 0;
 
-  if (mode === "practice") {
+  if (mode === "practice" || mode === "host") {
     const freshMix = createFreshPracticeMix();
     rounds = freshMix.rounds;
     seed = freshMix.seed;
@@ -672,9 +673,10 @@ function startGame(mode = "daily", challenge = activeDuel) {
   liveScore.textContent = "0";
   correctCount.textContent = "0";
   shareStatus.textContent = "";
-  toolbarLabel.textContent = mode === "duel" ? "Friend duel" : mode === "practice" ? "Practice mix" : "Today's mix";
-  roundRailLabel.textContent = mode === "duel" ? "Same five rounds" : mode === "practice" ? "Fresh practice" : "Five rounds";
-  scoreLabel.textContent = mode === "duel" ? `Score / ${target}` : "Score";
+  toolbarLabel.textContent = mode === "duel" ? "Friend duel" : mode === "host" ? "Duel builder" : mode === "practice" ? "Practice mix" : "Today's mix";
+  roundRailLabel.textContent = mode === "duel" ? "Same five rounds" : mode === "host" ? "Set the target" : mode === "practice" ? "Fresh practice" : "Five rounds";
+  scoreLabel.textContent = mode === "duel" ? `Score / ${target}` : mode === "host" ? "Target score" : "Score";
+  if (mode === "host") headerDate.textContent = "Duel builder";
   buildProgressUI();
   showView(playView);
   renderRound();
@@ -1004,6 +1006,7 @@ function finishGame(expired = false) {
   const progress = readProgress();
   const isPractice = gameState.mode === "practice";
   const isDuel = gameState.mode === "duel";
+  const isHost = gameState.mode === "host";
   if (gameState.mode === "daily") {
     const previousResult = progress.daily[todayKey];
     if (progress.lastPlayed !== todayKey) {
@@ -1034,6 +1037,20 @@ function finishGame(expired = false) {
     resultMessage.textContent = expired ? `Time called. ${outcome.copy}` : outcome.copy;
     shareButton.innerHTML = "Challenge back <span aria-hidden=\"true\">&#8599;</span>";
     replayButton.innerHTML = "Retry duel <span aria-hidden=\"true\">&#8635;</span>";
+    modeSwitchButton.innerHTML = "Daily home <span aria-hidden=\"true\">&#8592;</span>";
+  } else if (isHost) {
+    resultEyebrow.textContent = "Challenge ready";
+    resultDate.textContent = `MinuteMix Duel | Target ${gameState.score}`;
+    resultStreakLabel.textContent = "Score to beat";
+    resultStreak.textContent = String(gameState.score);
+    resultBestLabel.textContent = "Status";
+    resultBest.textContent = "Ready";
+    resultTitle.textContent = "Set the score to beat.";
+    resultMessage.textContent = expired
+      ? "Time called. Your exact five rounds are still ready to share as a duel."
+      : "Your exact five rounds are locked in. Send the duel and see who can top your score.";
+    shareButton.innerHTML = "Send duel <span aria-hidden=\"true\">&#8599;</span>";
+    replayButton.innerHTML = "Build another <span aria-hidden=\"true\">&#8635;</span>";
     modeSwitchButton.innerHTML = "Daily home <span aria-hidden=\"true\">&#8592;</span>";
   } else {
     resultEyebrow.textContent = isPractice ? "Practice complete" : "Mix complete";
@@ -1128,8 +1145,11 @@ function shareResult() {
     shareStatus.textContent = "This challenge link could not be prepared.";
     return;
   }
+  const shareHeading = gameState.mode === "duel"
+    ? "MinuteMix Duel | Challenge back"
+    : gameState.mode === "host" ? "MinuteMix Duel | Score to beat" : "MinuteMix Duel | Challenge a friend";
   const text = [
-    gameState.mode === "duel" ? "MinuteMix Duel | Challenge back" : "MinuteMix Duel | Challenge a friend",
+    shareHeading,
     marks,
     `I scored ${gameState.score}/1000 with ${gameState.correct}/5 correct.`,
     "Can you beat it on the exact same five challenges?"
@@ -1225,6 +1245,7 @@ function showDailyLobby() {
 
 startButton.addEventListener("click", () => startGame("daily"));
 practiceButton.addEventListener("click", () => startGame("practice"));
+createDuelButton.addEventListener("click", () => startGame("host"));
 startDuelButton.addEventListener("click", () => startGame("duel", activeDuel));
 duelHomeButton.addEventListener("click", showDailyLobby);
 replayButton.addEventListener("click", () => {
@@ -1234,12 +1255,14 @@ replayButton.addEventListener("click", () => {
       seed: gameState.seed,
       target: gameState.target
     });
+  } else if (gameMode === "host") {
+    startGame("host");
   } else {
     startGame("practice");
   }
 });
 modeSwitchButton.addEventListener("click", () => {
-  if (gameMode === "practice" || gameMode === "duel") showDailyLobby();
+  if (gameMode === "practice" || gameMode === "duel" || gameMode === "host") showDailyLobby();
   else startGame("daily");
 });
 shareButton.addEventListener("click", shareResult);
@@ -1269,6 +1292,8 @@ document.addEventListener("keydown", (event) => {
           seed: gameState.seed,
           target: gameState.target
         });
+      } else if (gameMode === "host") {
+        startGame("host");
       } else {
         startGame("practice");
       }
