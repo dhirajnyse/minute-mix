@@ -392,6 +392,18 @@ h3 {
   background: var(--ink-2);
 }
 
+.button-secondary {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.button-secondary:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #f2f6fc;
+}
+
 .played-note {
   max-width: 190px;
   margin: 0;
@@ -797,6 +809,72 @@ h3 {
   line-height: 1.25;
 }
 
+.sequence-stage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.sequence-tile {
+  display: grid;
+  width: 68px;
+  height: 64px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--blue);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.sequence-tile.is-missing {
+  color: var(--paper);
+  background: var(--blue);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.logic-stage {
+  display: grid;
+  width: min(100% - 36px, 520px);
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.logic-badge {
+  display: grid;
+  width: 92px;
+  height: 92px;
+  place-items: center;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--mint);
+  box-shadow: 7px 7px 0 var(--ink);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.logic-stage p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.math-stage {
+  padding: 20px;
+  color: var(--ink);
+  font-size: 54px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
 .scramble-stage {
   display: grid;
   gap: 14px;
@@ -964,6 +1042,14 @@ h3 {
   padding: 54px;
   color: var(--paper);
   background: var(--coral);
+}
+
+.result-view[data-mode="practice"] .result-score-block {
+  background: var(--blue);
+}
+
+.result-view[data-mode="practice"] .result-date {
+  color: var(--coral-dark);
 }
 
 .result-score-block .eyebrow {
@@ -1370,6 +1456,36 @@ h3 {
 
   .world-stage p {
     font-size: 17px;
+  }
+
+  .sequence-stage {
+    gap: 7px;
+    padding: 14px;
+  }
+
+  .sequence-tile {
+    width: 48px;
+    height: 50px;
+    font-size: 18px;
+  }
+
+  .logic-stage {
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .logic-badge {
+    width: 66px;
+    height: 66px;
+    font-size: 18px;
+  }
+
+  .logic-stage p {
+    font-size: 17px;
+  }
+
+  .math-stage {
+    font-size: 40px;
   }
 
   .letter-tile {

@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MinuteMix | Five Daily Challenges, 15 Seconds Each</title>
-    <meta name="description" content="Play five quick daily challenges with 15 seconds for each round. Build a streak, beat your best score, and share your MinuteMix result.">
+    <title>MinuteMix | Daily Challenges and Unlimited Practice</title>
+    <meta name="description" content="Play five quick daily challenges or keep going in unlimited Practice Mode. Build a streak, beat your best scores, and share your MinuteMix result.">
     <meta name="theme-color" content="#111827">
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="preload" href="assets/minutemix-key-art.webp" as="image" type="image/webp">
-    <link rel="stylesheet" href="styles.css">
-    <script src="game.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2">
+    <script src="game.js?v=2" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#game-app">Skip to game</a>
@@ -46,6 +46,7 @@
             <p class="lobby-description">Colour, memory, patterns, world knowledge, and words. Fast enough for a break, fresh again tomorrow.</p>
             <div class="lobby-actions">
               <button class="button button-primary" id="start-button" type="button">Play today&apos;s mix <span aria-hidden="true">&#9654;</span></button>
+              <button class="button button-secondary" id="practice-button" type="button">Practice <span aria-hidden="true">&infin;</span></button>
               <p id="played-note" class="played-note" hidden></p>
             </div>
           </div>
@@ -69,7 +70,7 @@
       <section class="view game-view" id="play-view" aria-labelledby="round-title" hidden>
         <div class="game-toolbar">
           <div>
-            <p class="toolbar-label">Today&apos;s mix</p>
+            <p class="toolbar-label" id="toolbar-label">Today&apos;s mix</p>
             <div class="progress-dots" id="progress-dots" aria-label="Round progress"></div>
           </div>
           <div class="timer-group">
@@ -82,7 +83,7 @@
 
         <div class="challenge-layout">
           <aside class="round-rail" aria-label="Challenge rounds">
-            <p>Five rounds</p>
+            <p id="round-rail-label">Five rounds</p>
             <ol id="round-rail-list"></ol>
           </aside>
 
@@ -105,7 +106,7 @@
       <section class="view result-view" id="result-view" aria-labelledby="result-title" hidden>
         <div class="result-layout">
           <div class="result-score-block">
-            <p class="eyebrow"><span></span> Mix complete</p>
+            <p class="eyebrow"><span></span><strong id="result-eyebrow">Mix complete</strong></p>
             <div class="result-score"><strong id="result-score">0</strong><span>/ 1000</span></div>
             <div class="result-marks" id="result-marks" aria-label="Round results"></div>
           </div>
@@ -116,12 +117,13 @@
             <p id="result-message">That was one lively mix.</p>
             <dl class="result-stats">
               <div><dt>Correct</dt><dd id="result-correct">0/5</dd></div>
-              <div><dt>Daily streak</dt><dd id="result-streak">0 days</dd></div>
-              <div><dt>Best score</dt><dd id="result-best">0</dd></div>
+              <div><dt id="result-streak-label">Daily streak</dt><dd id="result-streak">0 days</dd></div>
+              <div><dt id="result-best-label">Best score</dt><dd id="result-best">0</dd></div>
             </dl>
             <div class="result-actions">
               <button class="button button-primary" id="share-button" type="button">Share result <span aria-hidden="true">&#8599;</span></button>
               <button class="button button-dark" id="replay-button" type="button">Play again <span aria-hidden="true">&#8635;</span></button>
+              <button class="button button-secondary" id="mode-switch-button" type="button">Practice mode <span aria-hidden="true">&infin;</span></button>
             </div>
             <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
           </div>
@@ -130,7 +132,7 @@
     </main>
 
     <footer class="app-footer">
-      <div><strong>MinuteMix</strong><span>Five fresh challenges every day.</span></div>
+      <div><strong>MinuteMix</strong><span>Fresh daily. Unlimited practice.</span></div>
       <p>Your scores and streak stay on this device.</p>
     </footer>
   </body>

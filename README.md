@@ -1,12 +1,14 @@
 # MinuteMix
 
-A mobile-first daily web game with five short challenges and 15 seconds for each round.
+A mobile-first daily web game with five short challenges, 15 seconds for each round, and unlimited fresh practice mixes.
 
 ## Prototype features
 
 - Five deterministic daily rounds: colour, memory, counting, trivia, and word play
+- Unlimited Practice Mode with fresh five-round combinations
+- Three additional practice formats: number sequences, odd-one-out logic, and quick calculations
 - Speed-weighted scoring out of 1000
-- Local daily streak and best-score tracking
+- Separate local daily streak, daily best, and practice best tracking
 - Sound toggle with generated browser tones
 - Keyboard and touch controls
 - Native share or clipboard fallback

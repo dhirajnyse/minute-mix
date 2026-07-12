@@ -1,5 +1,6 @@
 const ROUND_TIME_MS = 15000;
-const TOTAL_TIME_MS = ROUND_TIME_MS * 5;
+const ROUNDS_PER_MIX = 5;
+const TOTAL_TIME_MS = ROUND_TIME_MS * ROUNDS_PER_MIX;
 const STORAGE_KEY = "minutemix-progress-v1";
 const SOUND_KEY = "minutemix-sound-v1";
 
@@ -17,7 +18,9 @@ const lobbyView = document.querySelector("#lobby-view");
 const playView = document.querySelector("#play-view");
 const resultView = document.querySelector("#result-view");
 const startButton = document.querySelector("#start-button");
+const practiceButton = document.querySelector("#practice-button");
 const replayButton = document.querySelector("#replay-button");
+const modeSwitchButton = document.querySelector("#mode-switch-button");
 const shareButton = document.querySelector("#share-button");
 const soundToggle = document.querySelector("#sound-toggle");
 const headerDate = document.querySelector("#header-date");
@@ -27,6 +30,8 @@ const playedNote = document.querySelector("#played-note");
 const resetCountdown = document.querySelector("#reset-countdown");
 const progressDots = document.querySelector("#progress-dots");
 const roundRailList = document.querySelector("#round-rail-list");
+const toolbarLabel = document.querySelector("#toolbar-label");
+const roundRailLabel = document.querySelector("#round-rail-label");
 const liveScore = document.querySelector("#live-score");
 const timerRing = document.querySelector("#timer-ring");
 const timerValue = document.querySelector("#timer-value");
@@ -40,28 +45,35 @@ const roundTime = document.querySelector("#round-time");
 const feedback = document.querySelector("#feedback");
 const resultScore = document.querySelector("#result-score");
 const resultMarks = document.querySelector("#result-marks");
+const resultEyebrow = document.querySelector("#result-eyebrow");
 const resultDate = document.querySelector("#result-date");
 const resultTitle = document.querySelector("#result-title");
 const resultMessage = document.querySelector("#result-message");
 const resultCorrect = document.querySelector("#result-correct");
+const resultStreakLabel = document.querySelector("#result-streak-label");
 const resultStreak = document.querySelector("#result-streak");
+const resultBestLabel = document.querySelector("#result-best-label");
 const resultBest = document.querySelector("#result-best");
 const shareStatus = document.querySelector("#share-status");
 
 const today = new Date();
 const todayKey = dateKey(today);
 const todayDisplay = new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" }).format(today);
-const rounds = buildDailyRounds(todayKey);
+const dailyRounds = buildDailyRounds(todayKey);
 
 let soundEnabled = readSoundPreference();
 let audioContext = null;
 let animationFrame = 0;
 let memoryTimeout = 0;
 let transitionTimeout = 0;
-let gameState = freshGameState();
+let practiceRun = 0;
+let gameMode = "daily";
+let rounds = dailyRounds;
+let gameState = freshGameState(gameMode);
 
-function freshGameState() {
+function freshGameState(mode = "daily") {
   return {
+    mode,
     isPlaying: false,
     locked: false,
     roundIndex: 0,
@@ -154,7 +166,15 @@ function buildDailyRounds(key) {
     { question: "Which planet is known as the Red Planet?", answer: "Mars", options: ["Mars", "Venus", "Jupiter", "Mercury"] },
     { question: "Which is the largest planet in our solar system?", answer: "Jupiter", options: ["Jupiter", "Saturn", "Neptune", "Earth"] },
     { question: "Which desert covers much of northern Africa?", answer: "Sahara", options: ["Sahara", "Gobi", "Atacama", "Kalahari"] },
-    { question: "Which gas has the chemical symbol O?", answer: "Oxygen", options: ["Oxygen", "Gold", "Osmium", "Hydrogen"] }
+    { question: "Which gas has the chemical symbol O?", answer: "Oxygen", options: ["Oxygen", "Gold", "Osmium", "Hydrogen"] },
+    { question: "Which is the largest mammal on Earth?", answer: "Blue whale", options: ["Blue whale", "Elephant", "Giraffe", "Orca"] },
+    { question: "What is the main language spoken in Brazil?", answer: "Portuguese", options: ["Portuguese", "Spanish", "French", "Italian"] },
+    { question: "Which element uses the symbol Au?", answer: "Gold", options: ["Gold", "Silver", "Copper", "Argon"] },
+    { question: "Which is the fastest land animal?", answer: "Cheetah", options: ["Cheetah", "Falcon", "Horse", "Leopard"] },
+    { question: "Which city is home to the Eiffel Tower?", answer: "Paris", options: ["Paris", "Rome", "Brussels", "Madrid"] },
+    { question: "Which continent has the most countries?", answer: "Africa", options: ["Africa", "Asia", "Europe", "South America"] },
+    { question: "What gas do plants absorb from the air?", answer: "Carbon dioxide", options: ["Carbon dioxide", "Oxygen", "Helium", "Hydrogen"] },
+    { question: "How many bones are in a typical adult human body?", answer: "206", options: ["206", "186", "226", "246"] }
   ];
   const trivia = pick(triviaBank, random);
 
@@ -165,7 +185,15 @@ function buildDailyRounds(key) {
     { word: "QUICK", hint: "Exactly how this game moves.", distractors: ["QUIET", "QUILT", "CLICK"] },
     { word: "MUSIC", hint: "Rhythm, melody, and sound.", distractors: ["MAGIC", "MOUSE", "BASIC"] },
     { word: "LOGIC", hint: "Reasoning that connects the clues.", distractors: ["LOCAL", "LIGHT", "COMIC"] },
-    { word: "DREAM", hint: "An idea with its eyes closed.", distractors: ["CREAM", "DRAMA", "STEAM"] }
+    { word: "DREAM", hint: "An idea with its eyes closed.", distractors: ["CREAM", "DRAMA", "STEAM"] },
+    { word: "FOCUS", hint: "Attention aimed at one clear point.", distractors: ["FORCE", "FOUND", "LOCUS"] },
+    { word: "LIGHT", hint: "It helps you see what is around you.", distractors: ["NIGHT", "RIGHT", "SIGHT"] },
+    { word: "CLOCK", hint: "It keeps watch over the minutes.", distractors: ["CLICK", "BLOCK", "CLOAK"] },
+    { word: "BRAVE", hint: "Ready to face something difficult.", distractors: ["BRAKE", "GRAVE", "BRACE"] },
+    { word: "WATER", hint: "Clear, essential, and found in every ocean.", distractors: ["LATER", "WAFER", "WATCH"] },
+    { word: "CLOUD", hint: "A soft-looking shape moving across the sky.", distractors: ["COULD", "CROWD", "CLOUT"] },
+    { word: "THINK", hint: "What every puzzle quietly asks you to do.", distractors: ["THANK", "THICK", "THING"] },
+    { word: "GLOBE", hint: "A small round model of our world.", distractors: ["GLOVE", "GLORY", "GLIDE"] }
   ];
   const wordRound = pick(wordBank, random);
   let scrambled = shuffled(wordRound.word.split(""), random).join("");
@@ -227,6 +255,116 @@ function buildDailyRounds(key) {
   ];
 }
 
+function buildPracticeRounds(seed) {
+  const random = seededRandom(hashString(`MinuteMix:practice:${seed}`));
+  const classics = shuffled(buildDailyRounds(`practice:${seed}`), random).slice(0, 3);
+  const newFormats = shuffled([
+    buildSequenceRound(random),
+    buildOddRound(random),
+    buildMathRound(random)
+  ], random).slice(0, 2);
+  return shuffled([...classics, ...newFormats], random);
+}
+
+function buildSequenceRound(random) {
+  const generators = [
+    () => {
+      const start = 2 + Math.floor(random() * 7);
+      const step = 2 + Math.floor(random() * 5);
+      return { values: Array.from({ length: 4 }, (_, index) => start + index * step), answer: start + 4 * step };
+    },
+    () => {
+      const start = 2 + Math.floor(random() * 4);
+      return { values: Array.from({ length: 4 }, (_, index) => start * (2 ** index)), answer: start * 16 };
+    },
+    () => {
+      const start = 2 + Math.floor(random() * 6);
+      return { values: [start, start + 3, start + 2, start + 5], answer: start + 4 };
+    },
+    () => {
+      const start = 1 + Math.floor(random() * 3);
+      return { values: Array.from({ length: 4 }, (_, index) => (start + index) ** 2), answer: (start + 4) ** 2 };
+    }
+  ];
+  const sequence = pick(generators, random)();
+  return {
+    type: "sequence",
+    accent: ACCENTS.blue,
+    name: "Sequence Sprint",
+    title: "What comes next?",
+    instruction: "Spot the number pattern and complete the sequence.",
+    sequence: [...sequence.values, "?"],
+    answer: sequence.answer,
+    options: numberOptions(sequence.answer, random)
+  };
+}
+
+function buildOddRound(random) {
+  const bank = [
+    { items: ["Mercury", "Venus", "Mars", "Orion"], answer: "Orion" },
+    { items: ["Copper", "Silver", "Gold", "Granite"], answer: "Granite" },
+    { items: ["Triangle", "Square", "Circle", "Cube"], answer: "Cube" },
+    { items: ["January", "March", "May", "Tuesday"], answer: "Tuesday" },
+    { items: ["Falcon", "Eagle", "Hawk", "Dolphin"], answer: "Dolphin" },
+    { items: ["Violin", "Cello", "Harp", "Trumpet"], answer: "Trumpet" },
+    { items: ["Ruby", "Emerald", "Sapphire", "Marble"], answer: "Marble" },
+    { items: ["Cairo", "Tokyo", "Lima", "Amazon"], answer: "Amazon" }
+  ];
+  const puzzle = pick(bank, random);
+  return {
+    type: "odd",
+    accent: ACCENTS.mint,
+    name: "Odd One Out",
+    title: "Which one breaks the group?",
+    instruction: "Three choices belong together. Find the outsider.",
+    answer: puzzle.answer,
+    options: shuffled(puzzle.items.map((value) => ({ label: value, value })), random)
+  };
+}
+
+function buildMathRound(random) {
+  const generators = [
+    () => {
+      const first = 6 + Math.floor(random() * 10);
+      const second = 4 + Math.floor(random() * 9);
+      const third = 2 + Math.floor(random() * 7);
+      return { expression: `${first} + ${second} - ${third}`, answer: first + second - third };
+    },
+    () => {
+      const first = 3 + Math.floor(random() * 7);
+      const second = 2 + Math.floor(random() * 6);
+      const third = 1 + Math.floor(random() * 5);
+      return { expression: `${first} x ${second} - ${third}`, answer: first * second - third };
+    },
+    () => {
+      const first = 3 + Math.floor(random() * 7);
+      const second = 2 + Math.floor(random() * 6);
+      const multiplier = 2 + Math.floor(random() * 3);
+      return { expression: `(${first} + ${second}) x ${multiplier}`, answer: (first + second) * multiplier };
+    }
+  ];
+  const puzzle = pick(generators, random)();
+  return {
+    type: "math",
+    accent: ACCENTS.yellow,
+    name: "Number Dash",
+    title: "Solve the quick calculation.",
+    instruction: "Work it through once and choose the result.",
+    expression: puzzle.expression,
+    answer: puzzle.answer,
+    options: numberOptions(puzzle.answer, random)
+  };
+}
+
+function numberOptions(answer, random) {
+  const values = new Set([answer]);
+  const offsets = shuffled([-6, -4, -3, -2, -1, 1, 2, 3, 4, 6], random);
+  offsets.forEach((offset) => {
+    if (values.size < 4 && answer + offset >= 0) values.add(answer + offset);
+  });
+  return shuffled([...values].map((value) => ({ label: String(value), value })), random);
+}
+
 function readProgress() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -235,13 +373,14 @@ function readProgress() {
         lastPlayed: parsed.lastPlayed || "",
         streak: Number(parsed.streak) || 0,
         best: Number(parsed.best) || 0,
+        practiceBest: Number(parsed.practiceBest) || 0,
         daily: parsed.daily && typeof parsed.daily === "object" ? parsed.daily : {}
       };
     }
   } catch (error) {
     // Local play still works when storage is unavailable.
   }
-  return { lastPlayed: "", streak: 0, best: 0, daily: {} };
+  return { lastPlayed: "", streak: 0, best: 0, practiceBest: 0, daily: {} };
 }
 
 function saveProgress(progress) {
@@ -330,13 +469,20 @@ function showView(view) {
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
-function startGame() {
+function startGame(mode = "daily") {
   clearGameTimers();
-  gameState = freshGameState();
+  gameMode = mode;
+  rounds = mode === "practice"
+    ? buildPracticeRounds(`${Date.now()}:${practiceRun += 1}`)
+    : dailyRounds;
+  gameState = freshGameState(mode);
   gameState.isPlaying = true;
   liveScore.textContent = "0";
   correctCount.textContent = "0";
   shareStatus.textContent = "";
+  toolbarLabel.textContent = mode === "practice" ? "Practice mix" : "Today's mix";
+  roundRailLabel.textContent = mode === "practice" ? "Fresh practice" : "Five rounds";
+  buildProgressUI();
   showView(playView);
   renderRound();
   playTone("start");
@@ -346,6 +492,7 @@ function startGame() {
 function renderRound() {
   window.clearTimeout(memoryTimeout);
   const round = rounds[gameState.roundIndex];
+  const activeRoundIndex = gameState.roundIndex;
   const now = performance.now();
   gameState.locked = false;
   gameState.roundStartedAt = now;
@@ -363,7 +510,7 @@ function renderRound() {
   if (round.type === "memory") {
     answerGrid.classList.add("is-waiting");
     memoryTimeout = window.setTimeout(() => {
-      if (!gameState.isPlaying || gameState.roundIndex !== 1 || gameState.locked) return;
+      if (!gameState.isPlaying || gameState.roundIndex !== activeRoundIndex || gameState.locked) return;
       roundTitle.textContent = "Which symbol was third?";
       roundInstruction.textContent = "Choose the third symbol from the sequence you just saw.";
       stimulus.innerHTML = '<div class="memory-cover">Sequence hidden.<br>Trust your first recall.</div>';
@@ -421,6 +568,40 @@ function renderStimulus(round) {
     const stage = document.createElement("div");
     stage.className = "world-stage";
     stage.innerHTML = `<span class="world-symbol" aria-hidden="true">&#9678;</span><p>${round.question}</p>`;
+    stimulus.appendChild(stage);
+    return;
+  }
+
+  if (round.type === "sequence") {
+    const stage = document.createElement("div");
+    stage.className = "sequence-stage";
+    round.sequence.forEach((value) => {
+      const tile = document.createElement("span");
+      tile.className = `sequence-tile${value === "?" ? " is-missing" : ""}`;
+      tile.textContent = String(value);
+      stage.appendChild(tile);
+    });
+    stimulus.appendChild(stage);
+    return;
+  }
+
+  if (round.type === "odd") {
+    const stage = document.createElement("div");
+    stage.className = "logic-stage";
+    const badge = document.createElement("span");
+    badge.className = "logic-badge";
+    badge.textContent = "1/4";
+    const copy = document.createElement("p");
+    copy.textContent = "One choice does not belong with the other three.";
+    stage.append(badge, copy);
+    stimulus.appendChild(stage);
+    return;
+  }
+
+  if (round.type === "math") {
+    const stage = document.createElement("div");
+    stage.className = "math-stage";
+    stage.textContent = `${round.expression} = ?`;
     stimulus.appendChild(stage);
     return;
   }
@@ -587,32 +768,56 @@ function finishGame(expired = false) {
   }
 
   const progress = readProgress();
-  const previousResult = progress.daily[todayKey];
-  if (progress.lastPlayed !== todayKey) {
-    progress.streak = daysBetween(progress.lastPlayed, todayKey) === 1 ? progress.streak + 1 : 1;
-    progress.lastPlayed = todayKey;
+  if (gameState.mode === "daily") {
+    const previousResult = progress.daily[todayKey];
+    if (progress.lastPlayed !== todayKey) {
+      progress.streak = daysBetween(progress.lastPlayed, todayKey) === 1 ? progress.streak + 1 : 1;
+      progress.lastPlayed = todayKey;
+    }
+    const bestToday = Math.max(previousResult ? previousResult.score : 0, gameState.score);
+    progress.daily[todayKey] = { score: bestToday, correct: Math.max(previousResult ? previousResult.correct : 0, gameState.correct) };
+    progress.best = Math.max(progress.best, gameState.score);
+  } else {
+    progress.practiceBest = Math.max(progress.practiceBest, gameState.score);
   }
-  const bestToday = Math.max(previousResult ? previousResult.score : 0, gameState.score);
-  progress.daily[todayKey] = { score: bestToday, correct: Math.max(previousResult ? previousResult.correct : 0, gameState.correct) };
-  progress.best = Math.max(progress.best, gameState.score);
   saveProgress(progress);
 
+  const isPractice = gameState.mode === "practice";
+  resultView.dataset.mode = gameState.mode;
   resultScore.textContent = String(gameState.score);
-  resultDate.textContent = `${todayDisplay} | Today's MinuteMix`;
-  resultCorrect.textContent = `${gameState.correct}/5`;
-  resultStreak.textContent = `${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
-  resultBest.textContent = String(progress.best);
-  resultTitle.textContent = resultHeading(gameState.correct);
+  resultEyebrow.textContent = isPractice ? "Practice complete" : "Mix complete";
+  resultDate.textContent = isPractice ? "Fresh practice | MinuteMix" : `${todayDisplay} | Today's MinuteMix`;
+  resultCorrect.textContent = `${gameState.correct}/${ROUNDS_PER_MIX}`;
+  resultStreakLabel.textContent = isPractice ? "Mode" : "Daily streak";
+  resultStreak.textContent = isPractice ? "Practice" : `${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
+  resultBestLabel.textContent = isPractice ? "Practice best" : "Best score";
+  resultBest.textContent = String(isPractice ? progress.practiceBest : progress.best);
+  replayButton.innerHTML = isPractice
+    ? "New practice mix <span aria-hidden=\"true\">&#8635;</span>"
+    : "Play again <span aria-hidden=\"true\">&#8635;</span>";
+  modeSwitchButton.innerHTML = isPractice
+    ? "Daily home <span aria-hidden=\"true\">&#8592;</span>"
+    : "Practice mode <span aria-hidden=\"true\">&infin;</span>";
+  resultTitle.textContent = resultHeading(gameState.correct, gameState.mode);
   resultMessage.textContent = expired
-    ? "The final bell called time. Your next mix arrives tomorrow."
-    : resultCopy(gameState.correct);
+    ? isPractice
+      ? "The final bell called time. A fresh practice mix is ready when you are."
+      : "The final bell called time. Your next mix arrives tomorrow."
+    : resultCopy(gameState.correct, gameState.mode);
   renderResultMarks();
   updateLobby();
   showView(resultView);
   playTone("finish");
 }
 
-function resultHeading(correct) {
+function resultHeading(correct, mode) {
+  if (mode === "practice") {
+    if (correct === 5) return "Practice mastered.";
+    if (correct === 4) return "Sharp practice.";
+    if (correct === 3) return "Nicely mixed.";
+    if (correct === 2) return "Warming up.";
+    return "Ready for another?";
+  }
   if (correct === 5) return "Perfectly mixed.";
   if (correct === 4) return "Sharp blend.";
   if (correct === 3) return "Nicely mixed.";
@@ -620,7 +825,12 @@ function resultHeading(correct) {
   return "Tomorrow wants a rematch.";
 }
 
-function resultCopy(correct) {
+function resultCopy(correct, mode) {
+  if (mode === "practice") {
+    if (correct === 5) return "Five clean answers. Your next fresh mix is one click away.";
+    if (correct >= 3) return "A sharp practice run. Try another mix and chase that personal best.";
+    return "A useful warm-up. Every new practice mix brings a different combination.";
+  }
   if (correct === 5) return "Five clean answers. That mix barely stood a chance.";
   if (correct >= 3) return "A lively result with room for one more clever day tomorrow.";
   return "Some days are quick, some are curious. Your streak has officially started.";
@@ -639,10 +849,13 @@ function renderResultMarks() {
 function shareResult() {
   const progress = readProgress();
   const marks = gameState.results.map((result) => result.correct ? "\u{1f7e9}" : "\u2b1c").join("");
+  const isPractice = gameState.mode === "practice";
   const text = [
-    `MinuteMix | ${todayDisplay}`,
+    isPractice ? "MinuteMix | Practice Mix" : `MinuteMix | ${todayDisplay}`,
     marks,
-    `${gameState.score}/1000 | ${gameState.correct}/5 | ${progress.streak}-day streak`,
+    isPractice
+      ? `${gameState.score}/1000 | ${gameState.correct}/5 | practice best ${progress.practiceBest}`
+      : `${gameState.score}/1000 | ${gameState.correct}/5 | ${progress.streak}-day streak`,
     "Five tiny challenges. Fifteen seconds each."
   ].join("\n");
 
@@ -708,8 +921,23 @@ function clearGameTimers() {
   window.clearTimeout(transitionTimeout);
 }
 
-startButton.addEventListener("click", startGame);
-replayButton.addEventListener("click", startGame);
+function showDailyLobby() {
+  clearGameTimers();
+  gameMode = "daily";
+  rounds = dailyRounds;
+  gameState = freshGameState("daily");
+  buildProgressUI();
+  updateLobby();
+  showView(lobbyView);
+}
+
+startButton.addEventListener("click", () => startGame("daily"));
+practiceButton.addEventListener("click", () => startGame("practice"));
+replayButton.addEventListener("click", () => startGame(gameMode));
+modeSwitchButton.addEventListener("click", () => {
+  if (gameMode === "practice") showDailyLobby();
+  else startGame("practice");
+});
 shareButton.addEventListener("click", shareResult);
 soundToggle.addEventListener("change", () => {
   soundEnabled = soundToggle.checked;
@@ -728,8 +956,8 @@ document.addEventListener("keydown", (event) => {
   }
 
   if (event.key === "Enter" && document.activeElement === document.body) {
-    if (!lobbyView.hidden) startGame();
-    else if (!resultView.hidden) startGame();
+    if (!lobbyView.hidden) startGame("daily");
+    else if (!resultView.hidden) startGame(gameMode);
   }
 });
 
