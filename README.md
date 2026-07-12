@@ -12,6 +12,7 @@ A mobile-first daily web game with five short challenges, 15 seconds for each ro
 - Target-score invitations, win/tie/gap results, retries, and challenge-back sharing without accounts or a backend
 - Speed-weighted scoring out of 1000
 - Separate local daily streak, daily best, and practice best tracking
+- Guest play history with optional passwordless email sign-in and secure cross-device sync
 - Sound toggle with generated browser tones
 - Keyboard and touch controls
 - Native share or clipboard fallback
@@ -22,4 +23,6 @@ A mobile-first daily web game with five short challenges, 15 seconds for each ro
 
 Open `index.html` directly or serve the folder with any static HTTP server.
 
-No account, API, backend, or external JavaScript dependency is required.
+The game itself remains a dependency-free static site and works without an account.
+
+Guest play remains fully local and needs no account. Optional cloud history uses Supabase Auth and the protected `play_history` table in `supabase/schema.sql`.

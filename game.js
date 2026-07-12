@@ -1020,6 +1020,16 @@ function finishGame(expired = false) {
     progress.practiceBest = Math.max(progress.practiceBest, gameState.score);
   }
   saveProgress(progress);
+  if (window.MinuteMixHistory) {
+    window.MinuteMixHistory.recordAttempt({
+      mode: gameState.mode,
+      score: gameState.score,
+      correct: gameState.correct,
+      seed: gameState.seed,
+      target: gameState.target,
+      rounds: gameState.results
+    });
+  }
 
   resultView.dataset.mode = gameState.mode;
   resultScore.textContent = String(gameState.score);

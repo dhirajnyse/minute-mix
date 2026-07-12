@@ -17,6 +17,7 @@
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/minutemix-app-icon.png">
     <link rel="manifest" href="site.webmanifest">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MinuteMix">
@@ -37,8 +38,10 @@
     <meta name="twitter:image:alt" content="MinuteMix daily brain game with colourful puzzle pieces and five fifteen-second challenges">
 
     <link rel="preload" href="assets/minutemix-key-art.webp" as="image" type="image/webp">
-    <link rel="stylesheet" href="styles.css?v=6">
-    <script src="game.js?v=6" defer></script>
+    <link rel="stylesheet" href="styles.css?v=7">
+    <script src="supabase-config.js?v=1" defer></script>
+    <script src="history.js?v=1" defer></script>
+    <script src="game.js?v=7" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -69,6 +72,11 @@
         </a>
 
         <div class="header-tools">
+          <button class="history-button" id="history-button" type="button" aria-label="Open play history" title="Play history">
+            <span class="history-clock" aria-hidden="true"></span>
+            <span class="history-button-label">History</span>
+            <span class="history-sync-dot" id="history-sync-dot" aria-hidden="true"></span>
+          </button>
           <div class="today-label"><span>Today</span><strong id="header-date">Daily mix</strong></div>
           <label class="sound-control" title="Sound effects">
             <span class="sound-label">Sound</span>
@@ -209,7 +217,58 @@
 
     <footer class="app-footer">
       <div><strong>MinuteMix</strong><span>Fresh daily. Unlimited practice. Friendly duels.</span></div>
-      <p>Your scores and streak stay on this device.</p>
+      <p id="footer-storage-note">Your scores and streak stay on this device.</p>
     </footer>
+
+    <dialog class="history-dialog" id="history-dialog" aria-labelledby="history-title">
+      <div class="history-shell">
+        <header class="history-heading">
+          <div>
+            <p class="history-kicker">Your MinuteMix</p>
+            <h2 id="history-title">Play history</h2>
+          </div>
+          <button class="icon-button" id="history-close-button" type="button" aria-label="Close play history" title="Close">&times;</button>
+        </header>
+
+        <section class="history-account-band" aria-labelledby="account-title">
+          <div class="history-account-copy">
+            <p class="history-account-kicker" id="account-eyebrow">Optional account</p>
+            <h3 id="account-title">Keep playing as a guest.</h3>
+            <p id="account-copy">History is saved on this device. Sign in to keep it synced across your devices.</p>
+          </div>
+
+          <form class="signin-form" id="signin-form">
+            <label for="signin-email">Email address</label>
+            <div class="signin-line">
+              <input id="signin-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+              <button class="button button-primary" id="signin-submit-button" type="submit">Send sign-in link</button>
+            </div>
+            <p class="signin-note">No password. Your email is used only to sign you in.</p>
+          </form>
+
+          <div class="signed-in-row" id="signed-in-row" hidden>
+            <strong id="signed-in-email"></strong>
+            <button class="button button-secondary button-on-dark" id="signout-button" type="button">Sign out</button>
+          </div>
+          <p class="account-status" id="account-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <dl class="history-summary" aria-label="History summary">
+          <div><dt>Sessions</dt><dd id="history-sessions">0</dd></div>
+          <div><dt>Best score</dt><dd id="history-best">0</dd></div>
+          <div><dt>Average</dt><dd id="history-average">0</dd></div>
+          <div><dt>Accuracy</dt><dd id="history-accuracy">0%</dd></div>
+        </dl>
+
+        <section class="recent-history" aria-labelledby="recent-history-title">
+          <div class="recent-history-heading">
+            <h3 id="recent-history-title">Recent sessions</h3>
+            <span id="history-storage-label">On this device</span>
+          </div>
+          <ol class="history-list" id="history-list"></ol>
+          <p class="empty-history" id="empty-history">Your first completed mix will appear here.</p>
+        </section>
+      </div>
+    </dialog>
   </body>
 </html>
